@@ -1,0 +1,1 @@
+# Desabilitar autoload
