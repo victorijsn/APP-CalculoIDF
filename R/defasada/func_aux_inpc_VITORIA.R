@@ -1,8 +1,14 @@
 coletando_inpc <- function(){
-  library(magrittr) 
+  library(magrittr)
+  library(data.table)
   
   # coletando base de dados
-  dados <- read.csv("https://sidra.ibge.gov.br/geratabela?format=us.csv&name=tabela1736.csv&terr=N&rank=-&query=t/1736/n1/all/v/44/p/all/d/v44%202/l/t%2Bv,,p", 
+  # dados <- read.csv("https://sidra.ibge.gov.br/geratabela?format=us.csv&name=tabela1736.csv&terr=N&rank=-&query=t/1736/n1/all/v/44/p/all/d/v44%202/l/t%2Bv,,p", 
+  #                   skip = 5, 
+  #                   header = F,
+  #                   encoding = "UTF-8",
+  #                   col.names = c("meses", "inpc"))
+  dados <- read.csv("./bases/tabela1736.csv",
                     skip = 5, 
                     header = F,
                     encoding = "UTF-8",
