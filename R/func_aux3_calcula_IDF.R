@@ -52,9 +52,16 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
   b <- bd[year(data_atual) >= ano_inicial] 
   
   # Criando variável idade
-  b[,diasp:= lubridate::time_length(lubridate::interval(b$nasc,b$data_atual),"days") ]
+  b[,diasp:= lubridate::time_length(
+    lubridate::interval(lubridate::dmy(b$nasc),
+                        lubridate::dmy(format(lubridate::ymd(b$data_atual), "%d%m%Y"))),"day")]
   
-  b[,idade:= floor(lubridate::time_length(lubridate::interval(b$nasc,b$data_atual),"years"))]
+  
+  b[,idade:= floor(lubridate::time_length(
+    lubridate::interval(lubridate::dmy(b$nasc),
+                        lubridate::dmy(format(lubridate::ymd(b$data_atual), "%d%m%Y"))),"year"))]
+  
+  
   
   #b$idade <- floor(b$diasp/365)
   b[,idade:= fifelse(idade < 0, NA_real_,
@@ -400,7 +407,7 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
   #ALGUMA RENDA EXCETO TRANSFERENCIAS
   b[,renda_ntrans:= renda_alg - renda_transf]
   
-  b[, renda_ntrans:= fifelse(renda_ntrans < 0,0, renda_ntrans)]
+  b[,renda_ntrans:= fifelse(renda_ntrans < 0,0, renda_ntrans)]
   
   
   ###################### Criando Base Domicilios a partir
@@ -414,13 +421,12 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
                                         inpc = inpc)
   
   ####### RELACIONANDO CADA DEFLATOR COM A DATA MAIS RECENTE DE CADASTRAMENTO
-  D[, ano_mes := format(as.Date(dat_atual_fam), "%Y-%m")]
-  b[, ano_mes := format(as.Date(dat_atual_fam), "%Y-%m")]
+  
+  D[, ano_mes := format(lubridate::as_date(dat_atual_fam,  format = "%d%m%Y"),"%Y-%m")]
+  b[, ano_mes := format(lubridate::as_date(dat_atual_fam,  format = "%d%m%Y"),"%Y-%m")]
   
   # l<- left_join(x = k, y = tabela_deflatores, by = "data")
   b <- merge.data.table(x = b, y = tabela_deflatores, by = "ano_mes")
-  
-  #####
   
   #RENDA DEFLACIONADA
   b[,renda_defla:= renda*deflatores]
@@ -516,7 +522,7 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
   
   nomes_collapse1a <- c("aux_v8a_", "aux_v8b_", "aux_t1_", "aux_t2_", "renda_transf_")
   collapse1a <- b[,by = c("cod_familiar_fam","cd_ibge"), lapply(.SD, sum, na.rm = TRUE),.SDcols = nomes_collapse1a]
-  
+  ## o merge com collapse1 e collapse1a da 14685 observações 
   B <- merge(collapse1, collapse1a, by=c("cd_ibge", "cod_familiar_fam"))
   
   ###################### BASE DOMICILIOS ##########################################################
@@ -977,7 +983,3 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
   return(out)
   
 }# fim da função
-
-
-
-
