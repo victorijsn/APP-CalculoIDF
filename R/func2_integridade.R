@@ -4,7 +4,6 @@
 source("R/func_aux0_verificar.R", encoding = 'utf-8')
 source("R/func_aux1_ler_arrumar.R", encoding = 'utf-8')
 
-# Dicionario dos nomes das colunas 
 dicionario <- read.csv(file = 'bases/dicionario.csv', sep = ';')
 dicionario <- dicionario %>%
   as_tibble()
@@ -17,7 +16,7 @@ integridade_ui <- function(id) {
   tagList(
     # Layout Integridade ####
     br(),
-
+    
     # Instruções 
     sidebarPanel(width = 12,
                  strong('Condições'),
@@ -54,18 +53,6 @@ integridade_server <- function(id, arquivo_entrada) {
       # mensagem de carregamento da verificação
       showModal(modalDialog('Carregando...', footer = NULL))
       
-      # # mensagem de erro pro tipo de arquivo
-      # 
-      # if (arquivo_entrada()$tipo != "csv" & arquivo_entrada()$tipo != "zip") {
-      #   showModal(modalDialog(
-      #     title = "Erro: tipo de arquivo não válido! ",
-      #     "Impossibilidade de verificação da integridade do arquivo, pois o arquivo não está em csv ou zipado",
-      #     easyClose = TRUE,
-      #     footer = NULL
-      #   ))
-      # 
-      # } 
-      
       # mensagem de erro quando o arquivo não estiver upado
       if (is.null(arquivo_entrada())) {
         showModal(modalDialog(
@@ -77,7 +64,7 @@ integridade_server <- function(id, arquivo_entrada) {
       } else {
         
         # chamando o arquivo upado
-        resultado_verificacao <- verificar(dado = arquivo_entrada()$dado, tipo =arquivo_entrada()$tipo)
+        resultado_verificacao <- verificar(dado = arquivo_entrada()$dado, tipo = arquivo_entrada()$tipo)
         removeModal()
         
         ## 2.1) RESULTADO DA VERIFICAÇÃO ##################
@@ -105,8 +92,8 @@ integridade_server <- function(id, arquivo_entrada) {
                        htmlOutput(session$ns('situacao'))
                 )
               ),
-              HTML('Verificação concluida com sucesso, o arquivo está nas condições desejáveis'),
-              hr(),
+              br()
+
             )
           )
           
@@ -126,110 +113,62 @@ integridade_server <- function(id, arquivo_entrada) {
             tagList(
               
               # título layout visualização
-              h3('Visualização do Arquivo'),
-              br(),
+              strong('Informações sobre a base de dados'),
               
               # botões layout visualização
               fluidRow(
-                column(4, 
-                       actionButton(session$ns('botao_tabela'), 'Mostrar tabela')),
+                br(),
                 column(4,
-                       actionButton(session$ns('botao_registro'), 'Registro Total')),
+                       actionButton(session$ns('botao_registro_pessoas'), 'Registro Total de Pessoas')),
                 column(4, 
-                       htmlOutput(session$ns('resultado_registrado')))
+                       htmlOutput(session$ns('resultado_registrado_pessoas'))),
               ),
-              br(),
-              
-    
-              # tabela de visualização do arquivo upado
-              htmlOutput(session$ns('tabela_final')),
+              fluidRow(
+                br(),
+                column(4,
+                       actionButton(session$ns('botao_registro_familiar'), 'Registro Total de Famílias')),
+                column(4, 
+                       htmlOutput(session$ns('resultado_registrado_familias'))),
+              ),
+              br()
             )
           )
           
           # mostrar o layout visualização caso esteja tudo certo
           shinyjs::show("visualizacao")
-
+          
           #### REGISTRO TOTAL ####
           # calculando o total registrado
-          registro_calculado <- eventReactive(input$botao_registro,{
+          registro_pessoas_calculado <- eventReactive(input$botao_registro_pessoas,{
             registro <- nrow(x = arquivo_entrada()$dado)
             return(registro)
           })
           
+          registro_familias_calculado <- eventReactive(input$botao_registro_familiar,{
+            # registro2 <- nrow(x = unique(arquivo_entrada()$dado$CodFamiliarFam))
+            registro2 <- arquivo_entrada()$dado %>% select(CodFamiliarFam) %>% unique() %>% nrow()
+            return(registro2)
+          })
+          
           # output resultado registrado
-          output$resultado_registrado <- renderUI(
+          output$resultado_registrado_pessoas <- renderUI(
             HTML(paste0(
               "<font color=\"#0B4993\"><b>",
-              'Total Registrados: ', 
-              registro_calculado(),
+              'Total de Pessoas Registrados: ', 
+              registro_pessoas_calculado(),
               "</b></font>")
             )
           )
           
-          
-          #### TABELA DO ARQUIVO ####
-          observeEvent(input$botao_tabela, {
-            output$tabela_final <- renderUI(
-              tagList(
-                # espaço das colunas
-                br(),
-                
-                fluidRow(
-                  column(width = 4, 
-                         tagList(
-                           strong('Selecione as colunas'),
-                           conditionalPanel(
-                             session$ns('input.dataset'),
-                             box(
-                               style='width:270px; height:510px; overflow-y: scroll;',
-                               checkboxGroupInput(session$ns("mostre_colunas"), "",
-                                                  choices = NULL,
-                                                  selected = NULL))))),
-                  
-                  column(width = 8,
-                         box(
-                           style='width:620px; overflow-x: scroll;',
-                           DT::dataTableOutput(session$ns('tabela'))))
-                ),
-                
-                br(),
-                br()
-              )
+          # output resultado registrado
+          output$resultado_registrado_familias <- renderUI(
+            HTML(paste0(
+              "<font color=\"#0B4993\"><b>",
+              'Total de Famílias Registradas: ', 
+              registro_familias_calculado(),
+              "</b></font>")
             )
-            
-            # selecionando colunas 
-            selecao_colunas <- eventReactive(input$botao_tabela, {
-              x <- colnames(x=arquivo_entrada()$dado)
-              y <- c('NumNisPessoaAtual', 
-                     'DtaNascPessoa', 
-                     'CodParentescoRfPessoa', 
-                     'CodFamiliarFam',
-                     'VlrRendaMediaFam',
-                     'QtdPessoasDomicFam')
-              
-              lista <- list('x' = x, 'y' = y)
-              return(lista)
-              })
-            
-            
-            observe({
-              updateCheckboxGroupInput(session, "mostre_colunas",
-                                       choices = selecao_colunas()$x,
-                                       selected = selecao_colunas()$y)
-            })
-            
-            # Colunas selecionadas de acordo com o checkbox
-            valores_selecionados <- reactive({
-              colunas_selecionadas <- select(arquivo_entrada()$dado, input$mostre_colunas)
-              return(colunas_selecionadas)
-            })
-            
-            # Saída da tabela 
-            output$tabela <- DT::renderDataTable(
-              DT::datatable(data = valores_selecionados())
-            )
-          }) 
-          
+          )
         }
         
         
@@ -288,14 +227,14 @@ integridade_server <- function(id, arquivo_entrada) {
           
           # escondendo o layout visualização
           shinyjs::hide("visualizacao")
-
+          
           removeModal()
         }
       }
       
     })
     
-    #2) SALVADO OS VALORES PARA USO EM OUTRO MÓDULO ####
+    # 2) SALVADO OS VALORES PARA USO EM OUTRO MÓDULO ####
     arquivo_verificado <- eventReactive(input$botao_integridade, {
       valor <- NULL
       verificacao <- verificar(dado = arquivo_entrada()$dado, tipo = arquivo_entrada()$tipo)$erro_quantos
@@ -305,7 +244,12 @@ integridade_server <- function(id, arquivo_entrada) {
         caminho <- arquivo_entrada()$caminho
         dado <- ler_arrumar(endereco_arquivo = caminho, endereco_dicionario = "bases/dicionario.csv")
         dado <- as.data.frame(dado)
-        return(dado)
+        registro_familia <- arquivo_entrada()$dado %>% 
+          select(CodFamiliarFam) %>% 
+          unique() %>% 
+          nrow()
+        lista <- list("registro_familiar" = registro_familia, "base" = dado)
+        return(lista)
       }
     })
     
