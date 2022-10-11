@@ -47,14 +47,19 @@ calculoIDF_ui <- function(id) {
     br(),
     mainPanel(
       column(width = 12,
-             textOutput(ns("resultado")))
+             textOutput(ns("resultado")),
+             br())
     ),
-    br(),
     fluidRow(
       column(width = 12,
              tableOutput(ns("tabela")))
     ),
     br(),
+    mainPanel(width = 12,
+              useShinyjs(),
+              htmlOutput(ns("visualizacao_erro"))),
+    br(),
+    
   )
 }
 
@@ -83,7 +88,7 @@ calculoIDF_server <- function(id, dados, inpc) {
     
     calculo <- eventReactive(input$calcularIDF, {
       IDFcalc <- IDF(
-        dados = dados(),
+        dados = dados()$base,
         lin_pextr = input$lin_pextr,
         lin_pobreza = input$lin_pobreza,
         sal_min = input$sal_min, 
@@ -117,6 +122,65 @@ calculoIDF_server <- function(id, dados, inpc) {
         } else {
           output$resultado <-  renderText("O cálculo terminou. Verifique as primeiras linhas da tabela antes de continuar.")
           output$tabela <- renderTable(head(dado_calculado[1:4],5))
+          colunas_dado_calculado <- dado_calculado %>% 
+            select(cod_familiar_fam) %>% unique() %>% nrow()
+          
+          if (colunas_dado_calculado != dados()$registro_familiar) {
+            output$visualizacao_erro <- renderUI(
+              tagList(
+                hr(),
+                # título layout visualização
+                strong('Discrepância na base calculada'),
+                
+                # botões layout visualização
+                fluidRow(
+                  br(),
+                  column(4, 
+                         htmlOutput(session$ns('resultado_erro'))),
+                ) ) )
+            
+            shinyjs::show("visualizacao")
+            
+            
+            # output resultado registrado
+            output$resultado_erro <- renderUI(
+              HTML(paste0(
+                "<font color=\"#9b2226\"><b>",
+                'Total de Famílias com IDF calculado: ', 
+                colunas_dado_calculado,
+                "</b></font>")
+              )
+            )
+            
+          } else {
+            output$visualizacao_erro <- renderUI(
+              tagList(
+                hr(),
+                # título layout visualização
+                strong('Informações da base calculada'),
+                
+                # botões layout visualização
+                fluidRow(
+                  br(),
+                  column(4, 
+                         htmlOutput(session$ns('resultado_erro'))),
+                ) ) )
+            
+            shinyjs::show("visualizacao")
+            
+            
+            # output resultado registrado
+            output$resultado_erro <- renderUI(
+              HTML(paste0(
+                "<font color=\"#9932CC\"><b>",
+                'Total de Famílias com IDF calculado: ', 
+                colunas_dado_calculado,
+                "</b></font>")
+              )
+            )
+          }
+          
+          
         } 
         
       }

@@ -1,6 +1,5 @@
 rm(list=ls())
 # Bibliotecas -------------------------------------------------------------
-
 library(shiny)
 library(magrittr) 
 library(data.table)
@@ -17,15 +16,13 @@ source("R/func1_upload.R", encoding = "UTF-8")
 source("R/func2_integridade.R", encoding = "UTF-8")
 source("R/func3_calculoIDF.R", encoding = "UTF-8")
 source("R/func4_export.R", encoding = "UTF-8")
-# source("R/func_aux_inpc.R", encoding = "UTF-8")
+source("R/func_aux_inpc.R", encoding = "UTF-8")
 
-# Em caso de pânico troque
-source("R/defasada/func_aux_inpc_VITORIA.R", encoding = "UTF-8")
-
+# # Em caso de pânico troque
+# source("R/defasada/func_aux_inpc_VITORIA.R", encoding = "UTF-8")
 
 # Calculando INPC ---------------------------------------------------------
-# inpc <- coletando_inpc_api()
-inpc <- coletando_inpc()
+inpc <- coletando_inpc_api()
 
 # UI ----------------------------------------------------------------------
 ui <- fluidPage(
