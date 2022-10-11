@@ -25,9 +25,14 @@ ler_arrumar <- function(endereco_arquivo, endereco_dicionario){
   dataset <- as.data.table(dataset)
   
   # Arrumar datas
-  dataset[,':='(dat_atual_fam = as.Date.character(dat_atual_fam, "%d%m%Y"),
-                dat_cadastramento_fam = as.Date.character(dat_cadastramento_fam, "%d%m%Y"),
-                dta_nasc_pessoa = as.Date.character(dta_nasc_pessoa, "%d%m%Y"))]
+  dataset[, ':='(dat_atual_fam = lubridate::dmy(dat_atual_fam),
+                 dat_cadastramento_fam = lubridate::dmy(dat_cadastramento_fam),
+                 dta_nasc_pessoa = lubridate::dmy(dta_nasc_pessoa))]
+  dataset[,':='(dat_atual_fam = format(dat_atual_fam, "%d%m%Y"),
+                dat_cadastramento_fam = format(dat_cadastramento_fam, "%d%m%Y"),
+                dta_nasc_pessoa = format(dta_nasc_pessoa, "%d%m%Y")
+  )]
+  
   
   # Arrumar numeros e valores
   dataset[, ':='(
@@ -50,6 +55,3 @@ ler_arrumar <- function(endereco_arquivo, endereco_dicionario){
   
   return(dataset)
 }
-
-
-  
