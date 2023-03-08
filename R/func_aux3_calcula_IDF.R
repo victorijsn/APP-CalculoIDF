@@ -415,15 +415,45 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
   
   
   ######## CALCULANDO DEFLATORES
+  source("R/func_aux2_atualiza_deflator.R", encoding = "UTF-8")
   
-  tabela_deflatores <- calcula_Deflator(ano_inicial = ano_inicial, 
-                                        data_Referencia = dataref_dados,
+  tabela_deflatores <- calcula_Deflator(ano_inicial = ano_inicial, # yyyy 
+                                        data_Referencia = dataref_dados, # yyyy-mm-dd
                                         inpc = inpc)
   
   ####### RELACIONANDO CADA DEFLATOR COM A DATA MAIS RECENTE DE CADASTRAMENTO
   
-  D[, ano_mes := format(lubridate::as_date(dat_atual_fam,  format = "%d%m%Y"),"%Y-%m")]
-  b[, ano_mes := format(lubridate::as_date(dat_atual_fam,  format = "%d%m%Y"),"%Y-%m")]
+  b[, data_recente_deflator :=lubridate::ym(max(tabela_deflatores$ano_mes))]
+  D[, data_recente_deflator :=lubridate::ym(max(tabela_deflatores$ano_mes))]
+  
+  # deixando a data de atualização da família em formato 'Date'
+  D[, data_original_att_fam := as.Date(format(lubridate::as_date(dat_atual_fam, #ddmmyyyy
+                                                                 format = "%d%m%Y"),
+                                              "%Y-%m-%d"))] 
+  b[, data_original_att_fam := as.Date(format(lubridate::as_date(dat_atual_fam, #ddmmyyyy
+                                                                 format = "%d%m%Y"),
+                                              "%Y-%m-%d"))]
+  
+  
+  # comparando a data de atualização da família com a data mais recente da deflacionada
+  # caso for superior, substituir pela data mais recente
+  D[, verifica_datas := data_original_att_fam > data_recente_deflator]
+  D[, data_corrigida := fifelse(verifica_datas == FALSE,
+                                data_original_att_fam,
+                                data_recente_deflator)]
+  b[, verifica_datas := data_original_att_fam > data_recente_deflator]
+  b[, data_corrigida := fifelse(verifica_datas == FALSE,
+                                data_original_att_fam,
+                                data_recente_deflator)]
+  
+  # selecionando o ano e o mês da data de atualização da família para relaciona-la
+  # com a tabela deflatores
+  D[, ano_mes := format(lubridate::as_date(data_corrigida, #ddmmyyyy
+                                           format = "%d%m%Y"),
+                        "%Y-%m")]
+  b[, ano_mes := format(lubridate::as_date(data_corrigida, #ddmmyyyy
+                                           format = "%d%m%Y"),
+                        "%Y-%m")]
   
   # l<- left_join(x = k, y = tabela_deflatores, by = "data")
   b <- merge.data.table(x = b, y = tabela_deflatores, by = "ano_mes")
@@ -980,6 +1010,7 @@ IDF <- function(dados = banco_de_dados, lin_pextr = 155, lin_pobreza = 450, sal_
               d1, d2,	d3,	sub_d1,	d4,	d5,	d6,	sub_d2,	d7,	d8,	d9,	sub_d3,	comp5, sub_h1,
               sub_h2,	sub_h3,	sub_h4,	sub_h5,	sub_h6,	sub_h7,	sub_h8,	comp6, h1, h2, h3,
               h4, h5, h6,	h7,	h8,	h9,	h10, h11,	h12, h13, h14, h15)]
+  
   return(out)
   
 }# fim da função
