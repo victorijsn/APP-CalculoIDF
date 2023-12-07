@@ -43,7 +43,7 @@ download_server <- function(id, arquivo) {
       },
       
       content = function(file) {
-        write.csv2(dado_download1(), file, row.names = FALSE)
+        write_excel_csv2(dado_download1(), file, row.names = FALSE)
       }
     )
     
@@ -54,7 +54,7 @@ download_server <- function(id, arquivo) {
       },
       
       content = function(file) {
-        write.csv2(dado_download2(), file, row.names = FALSE)
+        write_excel_csv2(dado_download2(), file, row.names = FALSE)
       }
     )
   })
